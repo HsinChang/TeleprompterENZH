@@ -164,7 +164,9 @@ input[type="range"] { width: 100%; height: 32px; accent-color: var(--accent); }
 .unit { color: var(--muted); font-size: 14px; }
 .tip { font-size: 13px; color: var(--muted); margin: 4px 0 0; }
 
-.start { width: 100%; min-height: 60px; font-size: 21px; border-radius: 12px; }
+.start { width: 100%; min-height: 60px; font-size: 21px; border-radius: 12px; flex-wrap: wrap; }
+.start-hint { width: 100%; font-size: 13px; font-weight: 400; opacity: .85; }
+.start-hint kbd { border-color: currentColor; }
 details.keys { font-size: 14px; color: var(--muted); }
 details.keys summary { cursor: pointer; min-height: 32px; }
 details.keys dl { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 8px 0 0; }
@@ -344,11 +346,12 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
         </div>
       </div>
 
-      <button class="btn start" id="startBtn">▶&nbsp; Start <span style="font-family:var(--font-zh)">开始提词</span></button>
+      <button class="btn start" id="startBtn">▶&nbsp; Start <span style="font-family:var(--font-zh)">开始提词</span><span class="start-hint">press <kbd>Space</kbd> · while typing <kbd>Shift</kbd>+<kbd>Space</kbd> · 按空格键开始</span></button>
 
       <details class="keys">
         <summary>Keyboard &amp; clicker shortcuts · 快捷键</summary>
         <dl>
+          <dt><kbd>Space</kbd></dt><dd>On this page: start 开始提词<br>(while typing: <kbd>Shift</kbd>+<kbd>Space</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Enter</kbd>)</dd>
           <dt><kbd>Space</kbd> / click</dt><dd>Pause / play 暂停 / 继续</dd>
           <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Faster / slower 加速 / 减速</dd>
           <dt><kbd>←</kbd> <kbd>→</kbd> <kbd>PgUp</kbd> <kbd>PgDn</kbd></dt><dd>Previous / next line 上一行 / 下一行</dd>
@@ -1229,6 +1232,24 @@ prompter.addEventListener('wheel', (e) => {
   showHud();
 }, { passive: false });
 
+// Start from the setup page: Space (outside text fields), Shift+Space or Ctrl/⌘+Enter (anywhere).
+function isTyping(el) {
+  if (!el) return false;
+  if (el.isContentEditable || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') return true;
+  return el.tagName === 'INPUT' && !/^(checkbox|radio|range|color|button|submit|reset|file)$/.test(el.type);
+}
+document.addEventListener('keydown', (e) => {
+  if (!prompter.hidden || e.repeat || e.isComposing || $('#startBtn').disabled) return;
+  const space = e.code === 'Space' || e.key === ' ';
+  const start =
+    (space && !e.ctrlKey && !e.metaKey && !e.altKey && (e.shiftKey || !isTyping(document.activeElement))) ||
+    (e.key === 'Enter' && (e.ctrlKey || e.metaKey));
+  if (!start) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  startPrompter();
+});
+
 document.addEventListener('keydown', (e) => {
   if (prompter.hidden || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
@@ -1246,7 +1267,7 @@ document.addEventListener('keydown', (e) => {
     Escape: exitPrompter
   };
   const fn = map[k];
-  if (fn) { e.preventDefault(); fn(); }
+  if (fn) { e.preventDefault(); if (!(e.repeat && fn === togglePlay)) fn(); }
 });
 
 let resizeTimer = 0;
