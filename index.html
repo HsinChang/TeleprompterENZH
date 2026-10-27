@@ -21,6 +21,7 @@
   --mark-bg: #fff2c7;
   --ipa-c: #9a4a00;
   --zh-c: #0b4f8a;
+  --brk-c: #d84315;
   --danger: #b3261e;
   --radius: 14px;
   --font-ui: "Atkinson Hyperlegible", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
@@ -34,13 +35,13 @@
   :root:not([data-theme="light"]) {
     --bg: #121518; --surface: #1b1f23; --surface-2: #171a1e; --ink: #e8ecef; --muted: #9aa4ad;
     --line: #2b3137; --accent: #6db1e0; --accent-ink: #0c1620; --accent-soft: #1d2d3a;
-    --mark-bg: #3d3416; --ipa-c: #ffc65c; --zh-c: #8fd0ff; --danger: #ff8a80; color-scheme: dark;
+    --mark-bg: #3d3416; --ipa-c: #ffc65c; --zh-c: #8fd0ff; --brk-c: #ff8a65; --danger: #ff8a80; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #121518; --surface: #1b1f23; --surface-2: #171a1e; --ink: #e8ecef; --muted: #9aa4ad;
   --line: #2b3137; --accent: #6db1e0; --accent-ink: #0c1620; --accent-soft: #1d2d3a;
-  --mark-bg: #3d3416; --ipa-c: #ffc65c; --zh-c: #8fd0ff; --danger: #ff8a80; color-scheme: dark;
+  --mark-bg: #3d3416; --ipa-c: #ffc65c; --zh-c: #8fd0ff; --brk-c: #ff8a65; --danger: #ff8a80; color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -85,7 +86,7 @@ button { cursor: pointer; }
 .stat { color: var(--muted); font-size: 15px; }
 
 textarea#text { width: 100%; min-height: 420px; resize: vertical; padding: 16px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); font-family: var(--font-read); font-size: 20px; line-height: 1.6; }
-.pane-foot { display: flex; gap: 8px; margin-top: 10px; }
+.pane-foot { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
 .pane-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
 .hint { margin: 0; color: var(--muted); }
 .check { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; cursor: pointer; }
@@ -97,6 +98,8 @@ textarea#text { width: 100%; min-height: 420px; resize: vertical; padding: 16px;
 .preview .w { cursor: pointer; border-radius: 5px; padding: 0 1px; }
 .preview .w:hover { background: var(--accent-soft); }
 .preview .w.marked { background: var(--mark-bg); }
+.preview .w.brk { cursor: default; }
+.preview .w.brk:hover { background: none; }
 .preview .w.long { text-decoration: underline dotted var(--accent) 2px; text-underline-offset: 5px; }
 .preview .w.flash { animation: flash 1s; }
 @keyframes flash { 0%, 40% { background: var(--accent); color: var(--accent-ink); } }
@@ -130,7 +133,7 @@ textarea#text { width: 100%; min-height: 420px; resize: vertical; padding: 16px;
 .note { margin: 12px 0 0; font-size: 13px; color: var(--muted); }
 
 /* Side panel */
-.pv { position: relative; border-radius: 10px; overflow: hidden; padding: 22px 16px; background: var(--pbg); color: var(--pfg); font-family: var(--font-read); font-weight: var(--pfw); line-height: var(--plh); --ipa-c: var(--pipa); --zh-c: var(--pzh); }
+.pv { position: relative; border-radius: 10px; overflow: hidden; padding: 22px 16px; background: var(--pbg); color: var(--pfg); font-family: var(--font-read); font-weight: var(--pfw); line-height: var(--plh); --ipa-c: var(--pipa); --zh-c: var(--pzh); --brk-c: var(--pbrk); }
 .pv p { margin: 0; position: relative; }
 .pv .cur { background: linear-gradient(to bottom, transparent, var(--pband) 20%, var(--pband) 80%, transparent); margin: 0 -16px; padding: 0 16px; }
 .pv .nxt { opacity: .6; }
@@ -181,6 +184,9 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
 #toast.show { opacity: 1; transform: translate(-50%, 0); }
 
 /* ---------- Shared word styles ---------- */
+/* In-sentence break typed as | (|| = longer pause) */
+.w.brk { white-space: nowrap; }
+.w.brk i { display: inline-block; width: .13em; height: .95em; margin: 0 .06em; vertical-align: -.12em; border-radius: .07em; background: var(--brk-c); }
 .w.ann { position: relative; }
 .w .ipa, .w .zh {
   position: absolute; left: 50%; transform: translateX(-50%);
@@ -190,7 +196,7 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
 .w .zh { top: 100%; margin-top: .02em; font-family: var(--font-zh); font-size: calc(var(--ann) * 1em); color: var(--zh-c); }
 
 /* ---------- Prompter ---------- */
-#prompter { position: fixed; inset: 0; z-index: 20; background: var(--pbg); color: var(--pfg); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; --ipa-c: var(--pipa); --zh-c: var(--pzh); }
+#prompter { position: fixed; inset: 0; z-index: 20; background: var(--pbg); color: var(--pfg); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; --ipa-c: var(--pipa); --zh-c: var(--pzh); --brk-c: var(--pbrk); }
 #prompter.idle, #prompter.idle * { cursor: none; }
 #stage { position: absolute; inset: 0; }
 #stage.mirror { transform: scaleX(-1); }
@@ -255,10 +261,12 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
           <span class="stat" id="wordStat"></span>
         </div>
         <div id="pane-edit">
-          <textarea id="text" spellcheck="true" placeholder="Paste or type the speech here…  在此粘贴或输入演讲稿"></textarea>
+          <textarea id="text" spellcheck="true" placeholder="Paste or type the speech here…  在此粘贴或输入演讲稿&#10;&#10;Type | where you want to pause.  在需要停顿处输入 |"></textarea>
           <div class="pane-foot">
             <button class="btn small ghost" id="clearBtn">Clear 清空</button>
             <button class="btn small ghost" id="sampleBtn">Load sample 示例</button>
+            <button class="btn small ghost" id="pauseBtn" title="Insert a pause mark at the cursor 在光标处插入停顿">Insert pause <b style="color:var(--brk-c)">|</b> 插入停顿</button>
+            <span class="tip" style="align-self:center">Type <b style="color:var(--brk-c)">|</b> to mark a pause, <b style="color:var(--brk-c)">||</b> for a longer one. 用 | 标记停顿，|| 表示较长停顿。</span>
           </div>
         </div>
         <div id="pane-mark" hidden>
@@ -291,7 +299,7 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
         <div id="pv" class="pv" aria-label="Live preview">
           <span class="pv-size" id="pvSize"></span>
           <p class="cur" id="pvCur"></p>
-          <p class="nxt">welcome to the forum.</p>
+          <p class="nxt">welcome <span class="w brk"><i></i></span> to the forum.</p>
         </div>
       </div>
 
@@ -439,9 +447,9 @@ It is a great honour to welcome you to this year's International Forum on Innova
 
 Over the past decade, our cooperation has grown steadily. Together, we have built partnerships that bring real benefits to our communities, our entrepreneurs and our young people.
 
-Today, the world faces unprecedented challenges: climate change, economic uncertainty, and rapid technological transformation. No country can address these challenges alone.
+Today, the world faces unprecedented challenges: | climate change, economic uncertainty, | and rapid technological transformation. No country can address these challenges alone.
 
-That is why multilateral cooperation matters more than ever. Let us work together with openness, mutual respect and a shared commitment to the future.
+That is why multilateral cooperation || matters more than ever. Let us work together with openness, mutual respect and a shared commitment to the future.
 
 I wish this forum every success. Thank you.`;
 
@@ -507,7 +515,8 @@ function parseScript(text) {
   for (const raw of text.replace(/\r/g, '').split('\n')) {
     const line = raw.trim();
     if (!line) { if (paras.length) gap = true; continue; }
-    paras.push({ gap, tokens: line.split(/\s+/) });
+    // A | (or full-width ｜) is its own token, even when typed without spaces.
+    paras.push({ gap, tokens: line.replace(/[|｜]+/g, ' $& ').trim().split(/\s+/) });
     gap = false;
   }
   return paras;
@@ -524,6 +533,7 @@ function weightOf(tok, key) {
   else if (/[,，—–]["'”’)\]]*$/.test(tok)) w += 0.45;
   return w;
 }
+const isBreak = (tok) => /^[|｜]+$/.test(tok);
 function cleanIPA(s) { return (s || '').trim().replace(/^[\/\[]\s*|\s*[\/\]]$/g, ''); }
 function syllables(w) {
   const groups = (w.match(/[aeiouy]+/g) || []).length;
@@ -545,7 +555,13 @@ function buildScript(container, annot, opts = {}) {
       const el = document.createElement('span');
       el.className = 'w';
       el.dataset.key = key;
-      el.append(tok);
+      if (isBreak(tok)) {
+        el.classList.add('brk');
+        el.setAttribute('aria-label', 'pause');
+        for (let n = 0; n < Math.min(tok.length, 3); n++) el.append(document.createElement('i'));
+      } else {
+        el.append(tok);
+      }
       const ipa = g && (annot === 'ipa' || annot === 'both') ? cleanIPA(g.ipa) : '';
       const zh = g && (annot === 'zh' || annot === 'both') ? (g.zh || '').trim() : '';
       if (ipa || zh) {
@@ -557,12 +573,13 @@ function buildScript(container, annot, opts = {}) {
         if (g) el.classList.add('marked');
         else if (S.markLong && key && isLong(key)) el.classList.add('long');
       }
-      let w = weightOf(tok, key);
+      let w = isBreak(tok) ? 0.7 * Math.min(tok.length, 3) : weightOf(tok, key);
       if (i === para.tokens.length - 1) w += 0.6;
       words.push({ el, start: cum, w });
       cum += w;
       p.append(el);
-      if (i < para.tokens.length - 1) p.append(' ');
+      // Keep a break mark on the same line as the word before it.
+      if (i < para.tokens.length - 1) p.append(isBreak(para.tokens[i + 1]) ? '\u00a0' : ' ');
     });
     frag.append(p);
   }
@@ -598,6 +615,7 @@ function applyVars() {
   r.setProperty('--pzh', light ? '#0b4f8a' : '#8fd3ff');
   r.setProperty('--pband', light ? 'rgba(0,0,0,.07)' : 'rgba(255,255,255,.09)');
   r.setProperty('--pmark', light ? '#c0392b' : '#ffcf5c');
+  r.setProperty('--pbrk', light ? '#d84315' : '#ff8a65');
   r.setProperty('--pfs', S.fontSize + 'px');
   r.setProperty('--plh', S.lineHeight);
   r.setProperty('--pfw', S.bold ? 700 : 400);
@@ -909,6 +927,14 @@ $('#sampleBtn').onclick = () => {
   textEl.value = S.text = SAMPLE;
   for (const [k, v] of Object.entries(SAMPLE_GLOSSARY)) if (!S.glossary[k]) S.glossary[k] = clone(v);
   save(); renderSpeed(); renderGloss(); renderPreview();
+};
+$('#pauseBtn').onclick = () => {
+  setTab('edit');
+  const a = textEl.selectionStart, b = textEl.selectionEnd;
+  const before = textEl.value.slice(0, a), after = textEl.value.slice(b);
+  textEl.focus();
+  textEl.setRangeText((/\s$/.test(before) || !before ? '' : ' ') + '|' + (/^\s/.test(after) ? '' : ' '), a, b, 'end');
+  textEl.dispatchEvent(new Event('input'));
 };
 $('#markLong').onchange = (e) => { S.markLong = e.target.checked; save(); renderPreview(); };
 
