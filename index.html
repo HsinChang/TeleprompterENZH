@@ -134,6 +134,8 @@ textarea#text { width: 100%; min-height: 420px; resize: vertical; padding: 16px;
 .pv p { margin: 0; position: relative; }
 .pv .cur { background: linear-gradient(to bottom, transparent, var(--pband) 20%, var(--pband) 80%, transparent); margin: 0 -16px; padding: 0 16px; }
 .pv .nxt { opacity: .6; }
+.pv.flat .cur { background: none; }
+.pv.flat .nxt { opacity: 1; }
 .pv-size { position: absolute; right: 8px; top: 6px; font: 12px var(--font-ui); opacity: .55; }
 
 .field { margin-bottom: 14px; }
@@ -207,6 +209,9 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
 
 #hud { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 16px; background: rgba(18, 20, 22, .82); color: #f2f4f5; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-family: var(--font-ui); font-size: 17px; transition: opacity .3s; max-width: calc(100vw - 24px); box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #prompter.idle #hud { opacity: 0; pointer-events: none; }
+#prompter.manual .auto-only { display: none !important; }
+#prompter.flat #band, #prompter.flat #marker { display: none; }
+#prompter.flat #scroller .w { opacity: 1; }
 .hud-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
 #hud button { min-width: 46px; height: 46px; border-radius: 10px; border: 0; background: transparent; color: inherit; font-size: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; }
 #hud button:hover { background: rgba(255,255,255,.12); }
@@ -271,7 +276,7 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
           </div>
         </div>
         <div id="gloss" class="gloss"></div>
-        <p class="note">Auto-fill looks words up online (IPA: dictionaryapi.dev · 中文: MyMemory). Please check the results. <span class="zh">自动结果仅供参考，请核对修改。</span></p>
+        <p class="note">Auto-fill looks words up online (IPA: Wiktionary · 中文: MyMemory). Please check the results. <span class="zh">自动结果仅供参考，请核对修改。</span></p>
       </div>
     </section>
 
@@ -303,6 +308,15 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
       </div>
 
       <div class="card">
+        <div class="field">
+          <div class="field-label"><span>Scrolling <span class="zh">滚动方式</span></span></div>
+          <div class="seg" id="modeSeg">
+            <button data-v="auto">Automatic<small>自动滚动</small></button>
+            <button data-v="manual">Manual<small>手动翻行</small></button>
+          </div>
+        </div>
+        <p class="tip" id="manualTip">Text moves only when you press <kbd>Space</kbd> / <kbd>→</kbd> / <kbd>↓</kbd> / clicker, click, or scroll. Back: <kbd>←</kbd> / <kbd>↑</kbd>.<br><span class="zh">文字不会自动滚动：按空格、方向键、翻页器、点击或滚轮翻到下一行。</span></p>
+        <div id="speedBox">
         <h3>Speed <span class="zh">速度</span></h3>
         <div class="speed-row" id="rowWpm">
           <input type="radio" name="speedMode" value="wpm" id="modeWpm" aria-label="Set by speaking rate">
@@ -324,6 +338,7 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
         </div>
         <p class="tip" id="speedStat"></p>
         <p class="tip">Suggested for non-native speakers: 100–120 words/min. <span class="zh">非母语演讲建议 100–120 词/分钟。</span></p>
+        </div>
       </div>
 
       <div class="card">
@@ -342,6 +357,7 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
         </div>
         <div class="field">
           <label class="check"><input type="checkbox" id="countdown"> 3-second countdown <span class="zh">开始前倒计时</span></label><br>
+          <label class="check"><input type="checkbox" id="highlight"> Highlight current line <span class="zh">突出当前行</span></label><br>
           <label class="check"><input type="checkbox" id="mirror"> Mirror text (for glass prompters) <span class="zh">镜像</span></label>
         </div>
       </div>
@@ -354,10 +370,12 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
           <dt><kbd>Space</kbd></dt><dd>On this page: start 开始提词<br>(while typing: <kbd>Shift</kbd>+<kbd>Space</kbd> or <kbd>Ctrl</kbd>/<kbd>⌘</kbd>+<kbd>Enter</kbd>)</dd>
           <dt><kbd>Space</kbd> / click</dt><dd>Pause / play 暂停 / 继续</dd>
           <dt><kbd>↑</kbd> <kbd>↓</kbd></dt><dd>Faster / slower 加速 / 减速</dd>
+          <dt>Manual mode</dt><dd><kbd>Space</kbd> <kbd>→</kbd> <kbd>↓</kbd> <kbd>PgDn</kbd> / click: next line 下一行 · <kbd>←</kbd> <kbd>↑</kbd> <kbd>PgUp</kbd>: back 上一行</dd>
           <dt><kbd>←</kbd> <kbd>→</kbd> <kbd>PgUp</kbd> <kbd>PgDn</kbd></dt><dd>Previous / next line 上一行 / 下一行</dd>
           <dt>Scroll / drag</dt><dd>Move text by hand 手动滚动</dd>
           <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>Bigger / smaller text 字号</dd>
           <dt><kbd>A</kbd></dt><dd>Switch annotations 切换注释</dd>
+          <dt><kbd>H</kbd></dt><dd>Highlight current line on / off 突出当前行</dd>
           <dt><kbd>M</kbd></dt><dd>Mirror 镜像</dd>
           <dt><kbd>Home</kbd></dt><dd>Back to start 回到开头</dd>
           <dt><kbd>Esc</kbd></dt><dd>Exit 退出</dd>
@@ -379,12 +397,12 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
     <div class="hud-row">
       <button data-act="restart" title="Back to start 回到开头" aria-label="Back to start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg></button>
       <button data-act="back" title="Previous line 上一行" aria-label="Previous line">‹</button>
-      <button data-act="play" class="primary" id="playBtn" aria-label="Play or pause"></button>
+      <button data-act="play" class="primary auto-only" id="playBtn" aria-label="Play or pause"></button>
       <button data-act="fwd" title="Next line 下一行" aria-label="Next line">›</button>
-      <span class="sep"></span>
-      <button data-act="slower" title="Slower 减速" aria-label="Slower">−</button>
-      <span class="val" id="hudSpeed"></span>
-      <button data-act="faster" title="Faster 加速" aria-label="Faster">+</button>
+      <span class="sep auto-only"></span>
+      <button data-act="slower" class="auto-only" title="Slower 减速" aria-label="Slower">−</button>
+      <span class="val auto-only" id="hudSpeed"></span>
+      <button data-act="faster" class="auto-only" title="Faster 加速" aria-label="Faster">+</button>
       <span class="sep"></span>
       <button data-act="smaller" title="Smaller text 缩小" aria-label="Smaller text" style="font-size:15px">A−</button>
       <button data-act="bigger" title="Bigger text 放大" aria-label="Bigger text">A+</button>
@@ -436,7 +454,9 @@ const DEFAULTS = {
   annSize: 0.4,
   countdown: true,
   mirror: false,
-  markLong: false
+  markLong: false,
+  scrollMode: 'auto',
+  highlight: true
 };
 
 const SWATCHES = [
@@ -628,6 +648,7 @@ function renderSwatches() {
 }
 
 function renderPreviewBox() {
+  $('#pv').classList.toggle('flat', !S.highlight);
   const g = S.glossary.distinguished || SAMPLE_GLOSSARY.distinguished;
   const cur = $('#pvCur');
   cur.textContent = 'Dear ';
@@ -656,6 +677,11 @@ function renderControls() {
   $('#bold').checked = S.bold;
   $('#countdown').checked = S.countdown;
   $('#mirror').checked = S.mirror;
+  $('#highlight').checked = S.highlight;
+  for (const b of document.querySelectorAll('#modeSeg button')) b.setAttribute('aria-pressed', String(b.dataset.v === S.scrollMode));
+  $('#speedBox').hidden = S.scrollMode === 'manual';
+  $('#manualTip').hidden = S.scrollMode !== 'manual';
+  $('#countdown').closest('label').style.opacity = S.scrollMode === 'manual' ? .5 : '';
   $('#markLong').checked = S.markLong;
   for (const b of document.querySelectorAll('#annotSeg button')) b.setAttribute('aria-pressed', String(b.dataset.v === S.annot));
   renderSpeed();
@@ -911,6 +937,10 @@ $('#annSize').oninput = (e) => { S.annSize = +e.target.value; $('#annSizeOut').t
 $('#bold').onchange = (e) => { S.bold = e.target.checked; changed(); };
 $('#countdown').onchange = (e) => { S.countdown = e.target.checked; save(); };
 $('#mirror').onchange = (e) => { S.mirror = e.target.checked; save(); };
+$('#highlight').onchange = (e) => { S.highlight = e.target.checked; changed(); };
+for (const b of document.querySelectorAll('#modeSeg button')) {
+  b.onclick = () => { S.scrollMode = b.dataset.v; save(); renderControls(); };
+}
 for (const b of document.querySelectorAll('#annotSeg button')) {
   b.onclick = () => { S.annot = b.dataset.v; renderControls(); changed(); };
 }
@@ -1064,22 +1094,33 @@ function render() {
   const i = lineAt(P.pos);
   const y = yAt(P.pos, i);
   scroller.style.transform = `translate3d(0, ${(P.G - y).toFixed(2)}px, 0)`;
-  if (i !== P.cur) { P.cur = i; markLines(i); }
+  if (i !== P.cur) {
+    P.cur = i;
+    markLines(i);
+    if (manual()) $('#hudTime').innerHTML = `${i + 1} / ${P.lines.length}<small>line 行</small>`;
+  }
+  $('#hudBar').style.width = (P.total ? P.pos / P.total * 100 : 0).toFixed(2) + '%';
+  if (manual()) return;
   const r = rate();
   const sec = Math.round(P.pos / r);
   if (sec !== P.lastSec) {
     P.lastSec = sec;
     $('#hudTime').innerHTML = `${fmt(P.pos / r)} / ${fmt(P.total / r)}<small>time 时间</small>`;
   }
-  $('#hudBar').style.width = (P.total ? P.pos / P.total * 100 : 0).toFixed(2) + '%';
 }
 
 function tick(t) {
   const dt = P.last ? Math.min(0.1, (t - P.last) / 1000) : 0;
   P.last = t;
   if (P.playing) {
+    P.target = null;
     P.pos += dt * rate();
     if (P.pos >= P.total) { P.pos = P.total; setPlaying(false); }
+  } else if (P.target != null) {
+    // Glide to the requested line instead of jumping.
+    const d = P.target - P.pos;
+    if (Math.abs(d) < 0.002) { P.pos = P.target; P.target = null; }
+    else P.pos += d * Math.min(1, dt * 9);
   }
   render();
   P.raf = requestAnimationFrame(tick);
@@ -1091,7 +1132,10 @@ function setPlaying(on) {
   $('#playBtn').innerHTML = P.playing ? ICON_PAUSE : ICON_PLAY;
   showHud();
 }
+function manual() { return S.scrollMode === 'manual'; }
+function setPos(pos) { P.target = null; P.pos = clamp(pos, 0, P.total); }
 function togglePlay() {
+  if (manual()) { jumpLine(1); return; }
   if (P.cd) { cancelCountdown(); setPlaying(true); return; }
   if (!P.playing && P.pos >= P.total) P.pos = 0;
   setPlaying(!P.playing);
@@ -1114,9 +1158,18 @@ function changeFont(d) {
   showHud();
 }
 function jumpLine(d) {
-  const i = clamp(lineAt(P.pos) + d, 0, P.lines.length - 1);
-  P.pos = posFromLine(i + 0.35);
+  if (P.playing) {
+    P.pos = posFromLine(clamp(lineAt(P.pos) + d, 0, P.lines.length - 1) + 0.35);
+  } else {
+    const from = P.target != null ? P.target : P.pos;
+    P.target = posFromLine(clamp(lineAt(from) + d, 0, P.lines.length - 1) + 0.5);
+  }
   showHud();
+}
+function toggleHighlight() {
+  S.highlight = !S.highlight;
+  prompter.classList.toggle('flat', !S.highlight);
+  save();
 }
 function cycleAnnot() {
   const order = ['both', 'ipa', 'zh', 'off'];
@@ -1128,7 +1181,7 @@ let hudTimer = 0;
 function showHud() {
   prompter.classList.remove('idle');
   clearTimeout(hudTimer);
-  if (P.playing) hudTimer = setTimeout(() => prompter.classList.add('idle'), 2500);
+  if (P.playing || manual()) hudTimer = setTimeout(() => prompter.classList.add('idle'), 2500);
 }
 
 function runCountdown(done) {
@@ -1155,7 +1208,9 @@ function startPrompter() {
   applyVars();
   document.body.classList.add('prompting');
   prompter.hidden = false;
-  P.pos = 0; P.last = 0; P.lastSec = -1; P.playing = false;
+  P.pos = 0; P.target = null; P.last = 0; P.lastSec = -1; P.playing = false;
+  prompter.classList.toggle('manual', manual());
+  prompter.classList.toggle('flat', !S.highlight);
   build();
   layout();
   updateSpeedLabel();
@@ -1166,7 +1221,8 @@ function startPrompter() {
   cancelAnimationFrame(P.raf);
   P.raf = requestAnimationFrame(tick);
   prompter.classList.add('idle');
-  if (S.countdown) runCountdown(() => setPlaying(true));
+  if (manual()) showHud();
+  else if (S.countdown) runCountdown(() => setPlaying(true));
   else setPlaying(true);
 }
 
@@ -1191,7 +1247,7 @@ hud.addEventListener('click', (e) => {
   const b = e.target.closest('button[data-act]');
   if (!b) return;
   ({
-    restart: () => { P.pos = 0; showHud(); },
+    restart: () => { setPos(0); showHud(); },
     back: () => jumpLine(-1),
     fwd: () => jumpLine(1),
     play: togglePlay,
@@ -1218,7 +1274,7 @@ prompter.addEventListener('pointermove', (e) => {
   if (!drag.moved && Math.abs(e.clientY - drag.startY) < 8) return;
   drag.moved = true;
   drag.y = e.clientY;
-  P.pos = posFromLine(lineFloat(P.pos) - dy / P.lh);
+  setPos(posFromLine(lineFloat(P.pos) - dy / P.lh));
 });
 prompter.addEventListener('pointerup', () => {
   if (drag && !drag.moved) togglePlay();
@@ -1228,7 +1284,7 @@ prompter.addEventListener('pointercancel', () => { drag = null; });
 prompter.addEventListener('wheel', (e) => {
   e.preventDefault();
   const dy = e.deltaMode === 1 ? e.deltaY * P.lh / 3 : e.deltaY;
-  P.pos = posFromLine(lineFloat(P.pos) + dy / P.lh);
+  setPos(posFromLine(lineFloat(P.pos) + dy / P.lh));
   showHud();
 }, { passive: false });
 
@@ -1253,21 +1309,28 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   if (prompter.hidden || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
-  const map = {
+  const next = () => jumpLine(1), prev = () => jumpLine(-1);
+  const map = manual() ? {
+    ' ': next, Enter: next, ArrowDown: next, ArrowRight: next, PageDown: next,
+    ArrowUp: prev, ArrowLeft: prev, PageUp: prev
+  } : {
     ' ': togglePlay, k: togglePlay, b: togglePlay, '.': togglePlay, Enter: togglePlay,
     ArrowUp: () => changeSpeed(5), ArrowDown: () => changeSpeed(-5),
     ArrowLeft: () => jumpLine(-1), PageUp: () => jumpLine(-1),
-    ArrowRight: () => jumpLine(1), PageDown: () => jumpLine(1),
+    ArrowRight: () => jumpLine(1), PageDown: () => jumpLine(1)
+  };
+  Object.assign(map, {
     '+': () => changeFont(4), '=': () => changeFont(4), '-': () => changeFont(-4), _: () => changeFont(-4),
     a: cycleAnnot, A: cycleAnnot,
     m: () => { S.mirror = !S.mirror; stage.classList.toggle('mirror', S.mirror); save(); },
     M: () => { S.mirror = !S.mirror; stage.classList.toggle('mirror', S.mirror); save(); },
-    Home: () => { P.pos = 0; showHud(); },
-    End: () => { P.pos = P.total; setPlaying(false); },
+    h: toggleHighlight, H: toggleHighlight,
+    Home: () => { setPos(0); showHud(); },
+    End: () => { setPos(P.total); setPlaying(false); },
     Escape: exitPrompter
-  };
+  });
   const fn = map[k];
-  if (fn) { e.preventDefault(); if (!(e.repeat && fn === togglePlay)) fn(); }
+  if (fn) { e.preventDefault(); if (!(e.repeat && fn === togglePlay && !manual())) fn(); }
 });
 
 let resizeTimer = 0;
