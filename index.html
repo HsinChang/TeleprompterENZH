@@ -136,6 +136,7 @@ textarea#text { width: 100%; min-height: 420px; resize: vertical; padding: 16px;
 .pv .nxt { opacity: .6; }
 .pv.flat .cur { background: none; }
 .pv.flat .nxt { opacity: 1; }
+.pv.guide .cur { border-bottom: 2px dotted var(--pmark); }
 .pv-size { position: absolute; right: 8px; top: 6px; font: 12px var(--font-ui); opacity: .55; }
 
 .field { margin-bottom: 14px; }
@@ -207,10 +208,15 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
 #cdOverlay span { animation: pop .9s ease-out; }
 @keyframes pop { from { transform: scale(1.35); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); opacity: .85; } }
 
-#hud { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 16px; background: rgba(18, 20, 22, .82); color: #f2f4f5; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-family: var(--font-ui); font-size: 17px; transition: opacity .3s; max-width: calc(100vw - 24px); box-shadow: 0 8px 30px rgba(0,0,0,.3); }
+#hud { position: absolute; z-index: 3; left: 50%; bottom: 22px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 16px; background: rgba(18, 20, 22, .82); color: #f2f4f5; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); font-family: var(--font-ui); font-size: 17px; transition: opacity .3s; max-width: calc(100vw - 24px); box-shadow: 0 8px 30px rgba(0,0,0,.3); }
 #prompter.idle #hud { opacity: 0; pointer-events: none; }
 #prompter.manual .auto-only { display: none !important; }
 #prompter.flat #band, #prompter.flat #marker { display: none; }
+#refline { position: absolute; left: max(16px, 4vw); right: max(16px, 4vw); top: calc(var(--G) + var(--pfs) * var(--plh) / 2); height: 28px; transform: translateY(-50%); cursor: ns-resize; touch-action: none; z-index: 2; }
+#refline::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; border-top: max(3px, calc(var(--pfs) * .055)) dotted var(--pmark); opacity: .8; transform: translateY(-50%); }
+#refline:hover::before, #refline.dragging::before { opacity: 1; }
+#prompter.noguide #refline { display: none; }
+#prompter.idle #refline { cursor: none; }
 #prompter.flat #scroller .w { opacity: 1; }
 .hud-row { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
 #hud button { min-width: 46px; height: 46px; border-radius: 10px; border: 0; background: transparent; color: inherit; font-size: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0 8px; }
@@ -356,7 +362,12 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
           <input type="range" id="annSize" min="0.28" max="0.6" step="0.02">
         </div>
         <div class="field">
+          <div class="field-label"><label for="guidePos">Reading line position <span class="zh">阅读线位置</span></label><output id="guidePosOut"></output></div>
+          <input type="range" id="guidePos" min="0.15" max="0.75" step="0.01">
+        </div>
+        <div class="field">
           <label class="check"><input type="checkbox" id="countdown"> 3-second countdown <span class="zh">开始前倒计时</span></label><br>
+          <label class="check"><input type="checkbox" id="guide"> Reference dotted line <span class="zh">参考虚线</span></label><br>
           <label class="check"><input type="checkbox" id="highlight"> Highlight current line <span class="zh">突出当前行</span></label><br>
           <label class="check"><input type="checkbox" id="mirror"> Mirror text (for glass prompters) <span class="zh">镜像</span></label>
         </div>
@@ -375,6 +386,8 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
           <dt>Scroll / drag</dt><dd>Move text by hand 手动滚动</dd>
           <dt><kbd>+</kbd> <kbd>−</kbd></dt><dd>Bigger / smaller text 字号</dd>
           <dt><kbd>A</kbd></dt><dd>Switch annotations 切换注释</dd>
+          <dt><kbd>L</kbd></dt><dd>Reference dotted line on / off 参考虚线</dd>
+          <dt><kbd>Shift</kbd>+<kbd>↑</kbd> <kbd>↓</kbd> / drag line</dt><dd>Move the reading line up / down 调整阅读线位置</dd>
           <dt><kbd>H</kbd></dt><dd>Highlight current line on / off 突出当前行</dd>
           <dt><kbd>M</kbd></dt><dd>Mirror 镜像</dd>
           <dt><kbd>Home</kbd></dt><dd>Back to start 回到开头</dd>
@@ -391,6 +404,7 @@ kbd { font: 12px var(--font-ui); border: 1px solid var(--line); border-bottom-wi
     <div id="marker"></div>
     <div id="scroller"></div>
   </div>
+  <div id="refline" title="Drag to move the reading line 拖动调整阅读位置" aria-hidden="true"></div>
   <div id="cdOverlay" hidden></div>
   <div id="hud">
     <div class="hud-progress"><div id="hudBar"></div></div>
@@ -456,7 +470,9 @@ const DEFAULTS = {
   mirror: false,
   markLong: false,
   scrollMode: 'auto',
-  highlight: true
+  highlight: true,
+  guide: true,
+  guidePos: 0.36
 };
 
 const SWATCHES = [
@@ -649,6 +665,7 @@ function renderSwatches() {
 
 function renderPreviewBox() {
   $('#pv').classList.toggle('flat', !S.highlight);
+  $('#pv').classList.toggle('guide', S.guide);
   const g = S.glossary.distinguished || SAMPLE_GLOSSARY.distinguished;
   const cur = $('#pvCur');
   cur.textContent = 'Dear ';
@@ -667,6 +684,7 @@ function renderPreviewBox() {
   requestAnimationFrame(() => fitAnnotations($('#pv')));
 }
 
+function guideLabel() { return `${Math.round(S.guidePos * 100)}% from top 距顶部`; }
 function renderControls() {
   $('#fontSize').value = S.fontSize;
   $('#fontSizeOut').textContent = S.fontSize + ' px';
@@ -678,6 +696,9 @@ function renderControls() {
   $('#countdown').checked = S.countdown;
   $('#mirror').checked = S.mirror;
   $('#highlight').checked = S.highlight;
+  $('#guide').checked = S.guide;
+  $('#guidePos').value = S.guidePos;
+  $('#guidePosOut').textContent = guideLabel();
   for (const b of document.querySelectorAll('#modeSeg button')) b.setAttribute('aria-pressed', String(b.dataset.v === S.scrollMode));
   $('#speedBox').hidden = S.scrollMode === 'manual';
   $('#manualTip').hidden = S.scrollMode !== 'manual';
@@ -938,6 +959,8 @@ $('#bold').onchange = (e) => { S.bold = e.target.checked; changed(); };
 $('#countdown').onchange = (e) => { S.countdown = e.target.checked; save(); };
 $('#mirror').onchange = (e) => { S.mirror = e.target.checked; save(); };
 $('#highlight').onchange = (e) => { S.highlight = e.target.checked; changed(); };
+$('#guide').onchange = (e) => { S.guide = e.target.checked; changed(); };
+$('#guidePos').oninput = (e) => { S.guidePos = +e.target.value; $('#guidePosOut').textContent = guideLabel(); save(); };
 for (const b of document.querySelectorAll('#modeSeg button')) {
   b.onclick = () => { S.scrollMode = b.dataset.v; save(); renderControls(); };
 }
@@ -1031,8 +1054,7 @@ function build() {
 }
 
 function layout() {
-  P.G = Math.round(window.innerHeight * 0.36);
-  prompter.style.setProperty('--G', P.G + 'px');
+  placeGuide();
   stage.classList.toggle('mirror', S.mirror);
   fitAnnotations(scroller);
   const fs = S.fontSize;
@@ -1166,11 +1188,50 @@ function jumpLine(d) {
   }
   showHud();
 }
+function placeGuide() {
+  P.G = Math.round(window.innerHeight * S.guidePos);
+  prompter.style.setProperty('--G', P.G + 'px');
+}
+function moveGuide(d) {
+  S.guidePos = clamp(Math.round((S.guidePos + d) * 100) / 100, 0.15, 0.75);
+  placeGuide();
+  render();
+  save();
+}
+function toggleGuide() {
+  S.guide = !S.guide;
+  prompter.classList.toggle('noguide', !S.guide);
+  save();
+}
 function toggleHighlight() {
   S.highlight = !S.highlight;
   prompter.classList.toggle('flat', !S.highlight);
   save();
 }
+
+// Drag the dotted line to move the reading position.
+const refline = $('#refline');
+refline.addEventListener('pointerdown', (e) => {
+  e.stopPropagation();
+  refline.setPointerCapture(e.pointerId);
+  refline.classList.add('dragging');
+});
+refline.addEventListener('pointermove', (e) => {
+  if (!refline.classList.contains('dragging')) return;
+  e.stopPropagation();
+  showHud();
+  // The line sits half a line below the reading centre.
+  const pos = (e.clientY - S.fontSize * S.lineHeight / 2) / window.innerHeight;
+  S.guidePos = clamp(Math.round(pos * 100) / 100, 0.15, 0.75);
+  placeGuide();
+  render();
+});
+const endGuideDrag = (e) => {
+  e.stopPropagation();
+  if (refline.classList.contains('dragging')) { refline.classList.remove('dragging'); save(); }
+};
+refline.addEventListener('pointerup', endGuideDrag);
+refline.addEventListener('pointercancel', endGuideDrag);
 function cycleAnnot() {
   const order = ['both', 'ipa', 'zh', 'off'];
   S.annot = order[(order.indexOf(S.annot) + 1) % order.length];
@@ -1211,6 +1272,7 @@ function startPrompter() {
   P.pos = 0; P.target = null; P.last = 0; P.lastSec = -1; P.playing = false;
   prompter.classList.toggle('manual', manual());
   prompter.classList.toggle('flat', !S.highlight);
+  prompter.classList.toggle('noguide', !S.guide);
   build();
   layout();
   updateSpeedLabel();
@@ -1309,6 +1371,12 @@ document.addEventListener('keydown', (e) => {
 document.addEventListener('keydown', (e) => {
   if (prompter.hidden || e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
+  if (e.shiftKey && (k === 'ArrowUp' || k === 'ArrowDown')) {
+    e.preventDefault();
+    moveGuide(k === 'ArrowUp' ? -0.02 : 0.02);
+    showHud();
+    return;
+  }
   const next = () => jumpLine(1), prev = () => jumpLine(-1);
   const map = manual() ? {
     ' ': next, Enter: next, ArrowDown: next, ArrowRight: next, PageDown: next,
@@ -1325,6 +1393,7 @@ document.addEventListener('keydown', (e) => {
     m: () => { S.mirror = !S.mirror; stage.classList.toggle('mirror', S.mirror); save(); },
     M: () => { S.mirror = !S.mirror; stage.classList.toggle('mirror', S.mirror); save(); },
     h: toggleHighlight, H: toggleHighlight,
+    l: toggleGuide, L: toggleGuide,
     Home: () => { setPos(0); showHud(); },
     End: () => { setPos(P.total); setPlaying(false); },
     Escape: exitPrompter
